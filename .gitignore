@@ -1,3 +1,12 @@
+# Maven, eclipse,idea files
+/target/
+.classpath
+.project
+/.settings/
+/.idea/
+*.iml
+
+
 # Compiled class file
 *.class
 
