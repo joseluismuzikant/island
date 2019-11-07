@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class DatesValidationService {
+public class DateValidationService {
 
     public void validateReservationDates(Reservation reservation) throws ReservationNotPossibleException {
         boolean isValid = true;
@@ -40,12 +40,19 @@ public class DatesValidationService {
         }
 
 
-        long diffInMillies = Math.abs(reservation.getReservedTo().getTime() - reservation.getReservedFrom().getTime());
-        long diffInDays = TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+        long diffInDays = getDiffInDays(reservation);
+        long diffInMillies;
+
         //Validate if the reservation is maximun for three days
         if(diffInDays >3){
             isValid = false;
             message = "The maximun reservation period is three days";
+        }
+        //Validate if the reservation is at least one day
+        //Is not in the requirement but it makes sense
+        if(diffInDays <1){
+            isValid = false;
+            message = "The reservation must be at least one day";
         }
 
         //Validate if the reservation is  1 day ahead of arrival
@@ -62,5 +69,15 @@ public class DatesValidationService {
         if(!isValid){
             throw new ReservationNotPossibleException(message);
         }
+    }
+
+    public long getDiffInDays(Reservation reservation) {
+        long diffInMillies = Math.abs(reservation.getReservedTo().getTime() - reservation.getReservedFrom().getTime());
+        return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+    }
+
+    public long getDiffInDays(Reservation r1,Reservation r2) {
+        long diffInMillies = Math.abs(r1.getReservedTo().getTime() - r2.getReservedFrom().getTime());
+        return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
     }
 }

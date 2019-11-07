@@ -16,6 +16,9 @@ import java.util.List;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    @Query(value = "select case when count(r)> 0 then true else false end from Reservation r where  r.cancelled = 0 AND (reservedFrom BETWEEN :fromDate AND :toDate) OR  (reservedTo BETWEEN :fromDate AND :toDate)")
-    public boolean existsReservationBetween(@Param("fromDate") Date fromDate, @Param("toDate")Date toDate);
+    @Query(value = "select case when count(r)> 0 then true else false end from Reservation r where  r.cancelled = false AND (r.reservedFrom BETWEEN :fromDate AND :toDate) OR  (r.reservedTo BETWEEN :fromDate AND :toDate)")
+    boolean existsReservationBetween(@Param("fromDate") Date fromDate, @Param("toDate")Date toDate);
+
+    @Query(value = "select r from Reservation r where  r.cancelled = false   AND r.reservedFrom < :toDate  AND  r.reservedTo > :fromDate")
+    List<Reservation> findAllBetween(@Param("fromDate") Date fromDate, @Param("toDate")Date toDate);
 }

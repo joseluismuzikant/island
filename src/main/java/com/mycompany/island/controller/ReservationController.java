@@ -13,8 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * The type ReservationController controller.
@@ -34,8 +33,9 @@ public class ReservationController {
      * Create a reservation.
      */
     @PostMapping("/reservations")
-    public Long createReservation(@Valid @RequestBody Reservation reservation) throws ReservationNotPossibleException {
-        return reservationService.asynchronousTryReservation(reservation);
+    public Reservation createReservation(@Valid @RequestBody Reservation reservation) throws ReservationNotPossibleException {
+
+        return reservationService.asynchronousTryReservation(reservation.datesToCheckInAndCheckOutFormat(),false);
     }
 
 
@@ -52,8 +52,8 @@ public class ReservationController {
                                                          @Valid @RequestBody Reservation reservation) throws ReservationNotPossibleException {
         Reservation newReservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ReservationNotPossibleException("Reservation not found on :: " + reservationId));
-        newReservation.copyValuesFrom(reservation);
-        reservationService.asynchronousTryReservation(newReservation);
+        newReservation.copyValuesForUpdate(reservation);
+        reservationService.asynchronousTryReservation(newReservation.datesToCheckInAndCheckOutFormat(),true);
         return ResponseEntity.ok(newReservation);
     }
 
@@ -68,14 +68,34 @@ public class ReservationController {
     }
 
     /**
+     * Get all reservations count.
+     */
+    @ApiOperation(value = "Get all reservation list size", responseContainer = "Integer")
+    @GetMapping("/reservations/count")
+    public Integer getAllReservationsCount() {
+        return reservationRepository.findAll().size();
+    }
+
+    /**
      * Get all available reservations.
      */
-    @ApiOperation(value = "Get all available reservation  list.", responseContainer = "List<AvailableReservation>")
+    @ApiOperation(value = "Get all available reservation availables  list.", responseContainer = "List<AvailableReservation>")
     @GetMapping("/reservations/availables")
-    public List<AvailableReservation> getAllAvailableReservations(@RequestParam("from") @DateTimeFormat(pattern="yyyy-MM-dd") Date fromDate,
-																  @RequestParam("to") @DateTimeFormat(pattern="yyyy-MM-dd") Date toDate) {
+    public List<AvailableReservation> getAllAvailableReservations(@RequestParam(name = "from", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
+                                                                  @RequestParam(name = "to", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate) throws ReservationNotPossibleException {
+        //By default is one month
+        if (fromDate == null || toDate == null) {
+            fromDate = new Date();
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(fromDate);
+            cal.add(Calendar.DATE, 30);
+            toDate = cal.getTime();
+        }
 
-        return reservationService.findAllAvailableReservation(fromDate,toDate);
+        if (toDate.before(fromDate)) {
+            throw new ReservationNotPossibleException("invalid dates");
+        }
+        return reservationService.findAllAvailableReservation(fromDate, toDate);
     }
 
     /**
@@ -90,6 +110,39 @@ public class ReservationController {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ReservationNotPossibleException("Reservation not found on :: " + reservationId));
         return ResponseEntity.ok().body(reservation);
+    }
+
+
+    /**
+     * Delete a reservation
+     *
+     * @param reservationId the reservation id
+     * @return the map
+     * @throws Exception the exception
+     */
+    @DeleteMapping("/reservations/{reservationId}")
+    public Map<String, Boolean> deleteReservation(@PathVariable(value = "reservationId") Long reservationId) throws Exception {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ReservationNotPossibleException("Reservation not found on :: " + reservationId));
+
+        reservationRepository.delete(reservation);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("deleted", Boolean.TRUE);
+        return response;
+    }
+
+    /**
+     * Delete allthe reservations
+     *
+     * @return the map
+     * @throws Exception the exception
+     */
+    @DeleteMapping("/reservations/all")
+    public Map<String, Boolean> deleteReservations() throws Exception {
+        reservationRepository.deleteAll();
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("deleted", Boolean.TRUE);
+        return response;
     }
 
 }

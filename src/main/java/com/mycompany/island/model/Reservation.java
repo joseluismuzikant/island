@@ -6,6 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.Calendar;
 import java.util.Date;
 
 @Entity
@@ -15,6 +16,7 @@ public class Reservation {
 
     public Reservation() {
     }
+
 
     public Reservation(@NotNull(message = "Please provide a user name") String userName,
                        @NotNull(message = "Please provide a user email") String userEmail,
@@ -47,30 +49,59 @@ public class Reservation {
     @NotNull(message = "Please provide an arrival date")
     @Column
     @Temporal(TemporalType.TIMESTAMP)
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private java.util.Date userArrival;
 
     @NotNull(message = "Please provide an departure date")
     @Column
     @Temporal(TemporalType.TIMESTAMP)
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private java.util.Date userDeparture;
 
     @Column
     @NotNull
-    private Boolean cancelled;
+    private Boolean cancelled = false;
 
     @NotNull(message = "Please provide an reserved from date")
     @Column
     @Temporal(TemporalType.TIMESTAMP)
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private java.util.Date reservedFrom;
 
     @NotNull(message = "Please provide an reserved to date")
     @Column
     @Temporal(TemporalType.TIMESTAMP)
-    @DateTimeFormat(pattern="yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private java.util.Date reservedTo;
+
+
+    public void copyValuesForUpdate(Reservation reservation) {
+        this.cancelled = reservation.cancelled;
+        this.userEmail = reservation.userEmail;
+        this.userName = reservation.userName;
+    }
+
+    public Reservation datesToCheckInAndCheckOutFormat() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(this.reservedFrom);
+        cal.set(Calendar.HOUR_OF_DAY, 12);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        this.reservedFrom = cal.getTime();
+
+        cal.setTime(this.reservedTo);
+        cal.set(Calendar.HOUR_OF_DAY, 12);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        this.reservedTo = cal.getTime();
+
+        return this;
+
+    }
 
     public Long getId() {
         return id;
@@ -96,6 +127,10 @@ public class Reservation {
         return cancelled;
     }
 
+    public Boolean isCancelled() {
+        return cancelled;
+    }
+
     public java.util.Date getReservedFrom() {
         return reservedFrom;
     }
@@ -104,13 +139,32 @@ public class Reservation {
         return reservedTo;
     }
 
-	public void copyValuesFrom(Reservation reservation) {
-    	this.cancelled = reservation.cancelled;
-    	this.reservedFrom = reservation.reservedFrom;
-    	this.reservedTo = reservation.reservedTo;
-    	this.userArrival = reservation.userArrival;
-    	this.userDeparture = reservation.userDeparture;
-    	this.userEmail = reservation.userEmail;
-    	this.userName = reservation.userName;
-	}
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public void setUserArrival(Date userArrival) {
+        this.userArrival = userArrival;
+    }
+
+    public void setUserDeparture(Date userDeparture) {
+        this.userDeparture = userDeparture;
+    }
+
+    public void setCancelled(Boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    public void setReservedFrom(Date reservedFrom) {
+        this.reservedFrom = reservedFrom;
+    }
+
+    public void setReservedTo(Date reservedTo) {
+        this.reservedTo = reservedTo;
+    }
 }
